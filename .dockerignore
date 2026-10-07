@@ -1,0 +1,8 @@
+dags
+logs
+plugins
+config
+.git
+.gitignore
+credentials
+*.md

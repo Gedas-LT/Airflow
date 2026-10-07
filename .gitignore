@@ -1,0 +1,7 @@
+logs/
+config/airflow.cfg
+__pycache__/
+*.pyc
+credentials/
+.venv/
+.env.local
