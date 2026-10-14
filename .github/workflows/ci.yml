@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  parse-dags:
+    name: Parse DAGs
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: airflow
+          POSTGRES_PASSWORD: airflow
+          POSTGRES_DB: airflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U airflow"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Airflow image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: airflow-ci:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Migrate metadata DB and parse DAGs
+        run: |
+          set -euo pipefail
+          docker run --rm --network host \
+            -e AIRFLOW__CORE__LOAD_EXAMPLES=false \
+            -e AIRFLOW__CORE__EXECUTOR=LocalExecutor \
+            -e AIRFLOW__CORE__AUTH_MANAGER=airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager \
+            -e AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@127.0.0.1/airflow \
+            -e AIRFLOW__API_AUTH__JWT_SECRET=ci_jwt_secret \
+            -e AIRFLOW_VAR_ENV_NAME=dev \
+            -v "${GITHUB_WORKSPACE}/dags:/opt/airflow/dags" \
+            airflow-ci:latest \
+            bash -c '
+              set -euo pipefail
+              airflow db migrate
+              airflow dags list
+              errors="$(airflow dags list-import-errors)"
+              echo "$errors"
+              if ! echo "$errors" | grep -qi "No data found"; then
+                echo "DAG import errors" >&2
+                exit 1
+              fi
+            '

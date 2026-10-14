@@ -1,0 +1,19 @@
+{
+  "sheet_to_bq_columns": {
+    "Company name": "company_name",
+    "Ticker": "ticker",
+    "Quantity": "quantity",
+    "Cost basis": "cost_basis",
+    "Currency": "currency"
+  },
+  "table": {
+    "write_disposition": "WRITE_TRUNCATE",
+    "schema": [
+      {"name": "company_name", "type": "STRING", "mode": "NULLABLE"},
+      {"name": "ticker", "type": "STRING", "mode": "NULLABLE"},
+      {"name": "quantity", "type": "FLOAT", "mode": "NULLABLE"},
+      {"name": "cost_basis", "type": "FLOAT", "mode": "NULLABLE"},
+      {"name": "currency", "type": "STRING", "mode": "NULLABLE"}
+    ]
+  }
+}
