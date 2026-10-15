@@ -44,15 +44,17 @@ jobs:
         run: |
           set -euo pipefail
           docker run --rm --network host \
+            --entrypoint bash \
+            -e CONNECTION_CHECK_MAX_COUNT=0 \
             -e AIRFLOW__CORE__LOAD_EXAMPLES=false \
             -e AIRFLOW__CORE__EXECUTOR=LocalExecutor \
             -e AIRFLOW__CORE__AUTH_MANAGER=airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager \
-            -e AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@127.0.0.1/airflow \
+            -e AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@127.0.0.1:5432/airflow \
             -e AIRFLOW__API_AUTH__JWT_SECRET=ci_jwt_secret \
             -e AIRFLOW_VAR_ENV_NAME=dev \
             -v "${GITHUB_WORKSPACE}/dags:/usr/local/airflow/dags" \
             airflow-ci:latest \
-            bash -c '
+            -c '
               set -euo pipefail
               airflow db migrate
               airflow dags list
