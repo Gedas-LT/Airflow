@@ -1,6 +1,8 @@
 from pathlib import Path
 
+import pandas as pd
 import pendulum
+import requests
 from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
 from airflow.sdk import Variable, dag, task
 
@@ -9,6 +11,7 @@ ENV_NAME = Variable.get("env_name", default="dev")
 GCP_CONN_ID = "google_cloud_default"
 BQ_DATASET_ID = "external__google_sheets"
 BQ_TABLE_ID = "stocks_cost_basis"
+TWELVE_DATA_API_KEY = Variable.get("twelve_data_api_key")
 
 if ENV_NAME == "dev":
     BQ_PROJECT_ID = "gedas-analytics-dev"
@@ -44,6 +47,24 @@ def twelve_data_data_upload_to_bq():
         symbols = symbols_df["symbol"].tolist()
 
         return symbols
+
+    @task
+    def get_twelve_data_data(symbols: list[str]) -> list[dict]:
+
+        """Get the data from the Twelve Data API
+        
+        Keyword arguments:
+        symbols -- list of symbols to get data for
+        """
+
+        rows = []
+        for symbol in symbols[:3]: # TODO: Remove this limit later
+            payload = requests.get(
+                 "https://api.twelvedata.com/eod",
+                 params={"symbol": symbol, "apikey": TWELVE_DATA_API_KEY}
+            ).json()
+            rows.append(payload)
+
 
     get_symbols_from_bq()
 
