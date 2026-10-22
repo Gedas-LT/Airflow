@@ -1,0 +1,13 @@
+{
+    "table": {
+      "write_disposition": "WRITE_APPEND",
+      "schema": [
+        {"name": "date", "type": "DATE", "mode": "NULLABLE"},
+        {"name": "name", "type": "STRING", "mode": "NULLABLE"},
+        {"name": "symbol", "type": "STRING", "mode": "NULLABLE"},
+        {"name": "close_price", "type": "FLOAT", "mode": "NULLABLE"},
+        {"name": "price_currency", "type": "STRING", "mode": "NULLABLE"},
+        {"name": "exchange_code", "type": "STRING", "mode": "NULLABLE"}
+      ]
+    }
+  }
