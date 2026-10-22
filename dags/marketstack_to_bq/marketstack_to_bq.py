@@ -73,7 +73,8 @@ def marketstack_data_upload_to_bq():
         ]
         dataframe["date"] = pd.to_datetime(dataframe["date"], utc=True).dt.date
 
-        return dataframe
+        # XCOM can only handle JSON, so we need to convert the dataframe to a list of dictionaries
+        return dataframe.to_dict(orient="records")
 
     symbols = get_symbols_from_bq()
     dataframe = get_marketstack_data(symbols)
