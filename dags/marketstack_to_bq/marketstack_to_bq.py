@@ -64,7 +64,7 @@ def marketstack_data_upload_to_bq():
 
         params = {
             "access_key": MARKETSTACK_API_KEY,
-            "symbols": ",".join(symbols[:5]), # TODO: Remove this limit later
+            "symbols": ",".join(symbols),
             "limit": max(len(symbols), 1),
         }
         
