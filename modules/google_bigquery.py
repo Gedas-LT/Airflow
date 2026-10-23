@@ -18,8 +18,7 @@ def delete_from_table(
     gcp_conn_id -- The ID of the GCP connection
     """
 
-    hook = BigQueryHook(gcp_conn_id=gcp_conn_id, use_legacy_sql=False)
-    client = hook.get_client(project_id=project_id)
+    client = get_client(project_id=project_id, gcp_conn_id=gcp_conn_id)
 
     try:
         client.get_table(table_id)
@@ -64,8 +63,8 @@ def upload_dataframe(
     gcp_conn_id -- The ID of the GCP connection
     """
 
-    hook = BigQueryHook(gcp_conn_id=gcp_conn_id, use_legacy_sql=False)
-    client = hook.get_client(project_id=project_id)
+    client = get_client(project_id=project_id, gcp_conn_id=gcp_conn_id)
+    
     job_config = bigquery.LoadJobConfig(
         schema=schema,
         autodetect=False,

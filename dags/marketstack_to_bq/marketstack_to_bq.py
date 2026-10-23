@@ -7,7 +7,7 @@ import requests
 from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
 from airflow.sdk import Variable, dag, task
 
-from modules.google_bigquery import delete_from_table, upload_dataframe
+from modules.google_bigquery import delete_from_table, get_client, upload_dataframe
 
 # GLOBAL VARIABLES
 ENV_NAME = Variable.get("env_name", default="dev")
@@ -40,8 +40,7 @@ def marketstack_data_upload_to_bq():
 
         """Get the symbols from the BigQuery table"""
 
-        hook = BigQueryHook(gcp_conn_id=GCP_CONN_ID, use_legacy_sql=False)
-        client = hook.get_client(project_id=BQ_PROJECT_ID)
+        client = get_client(project_id=BQ_PROJECT_ID, gcp_conn_id=GCP_CONN_ID)
         symbols_df = client.query(
             f"""
             SELECT DISTINCT ticker AS symbol
@@ -65,7 +64,7 @@ def marketstack_data_upload_to_bq():
 
         params = {
             "access_key": MARKETSTACK_API_KEY,
-            "symbols": ",".join(symbols[:3]), # TODO: Remove this limit later
+            "symbols": ",".join(symbols[:5]), # TODO: Remove this limit later
             "limit": max(len(symbols), 1),
         }
         
@@ -77,7 +76,9 @@ def marketstack_data_upload_to_bq():
         dataframe = pd.DataFrame(payload["data"])[
             ["date", "name", "symbol", "close", "price_currency", "exchange_code"]
         ]
+        
         dataframe["date"] = pd.to_datetime(dataframe["date"], utc=True).dt.date
+        dataframe["exchange_code"] = dataframe["exchange_code"].astype(object).fillna(None)
         dataframe = dataframe.rename(columns={"close": "close_price"})
 
         # XCOM can only handle JSON, so we need to convert the dataframe to a list of dictionaries
@@ -96,15 +97,15 @@ def marketstack_data_upload_to_bq():
         project_id = BQ_PROJECT_ID
         schema = config["table"]["schema"]
         write_disposition = config["table"]["write_disposition"]
-        gcp_conn_id = GCP_CONN_ID
 
         date_value = dataframe["date"].iloc[0]
         where_clause = f"WHERE date = '{date_value}'"
+        
         delete_from_table(
             table_id=table_id,
             project_id=project_id,
             where_clause=where_clause,
-            gcp_conn_id=gcp_conn_id,
+            gcp_conn_id=GCP_CONN_ID,
         )
 
         upload_dataframe(
