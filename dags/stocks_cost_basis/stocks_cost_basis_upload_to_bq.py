@@ -1,14 +1,14 @@
 import json
 from pathlib import Path
 
-import pendulum
-
 import pandas as pd
-from google.cloud import bigquery
-
+import pendulum
 from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
 from airflow.providers.google.suite.hooks.sheets import GSheetsHook
 from airflow.sdk import Variable, dag, task
+from google.cloud import bigquery
+
+from modules.google_bigquery import upload_dataframe
 
 # GLOBAL VARIABLES
 ENV_NAME = Variable.get("env_name", default="dev")
@@ -71,21 +71,20 @@ def stocks_cost_basis_upload_to_bq():
 
         dataframe = pd.DataFrame(records)
         table_id = f"{BQ_PROJECT_ID}.{BQ_DATASET_ID}.{BQ_TABLE_ID}"
+        project_id = BQ_PROJECT_ID
+        schema = config["table"]["schema"]
+        write_disposition = config["table"]["write_disposition"]
+        gcp_conn_id = GCP_CONN_ID
 
-        hook = BigQueryHook(gcp_conn_id=GCP_CONN_ID, use_legacy_sql=False)
-        client = hook.get_client(project_id=BQ_PROJECT_ID)
-        job_config = bigquery.LoadJobConfig(
-            schema=config["table"]["schema"],
-            autodetect=False,
-            write_disposition=config["table"]["write_disposition"],
+        upload_dataframe(
+            dataframe=dataframe,
+            table_id=table_id,
+            project_id=project_id,
+            schema=schema,
+            write_disposition=write_disposition,
+            gcp_conn_id=GCP_CONN_ID
         )
-        job = client.load_table_from_dataframe(
-            dataframe,
-            table_id,
-            job_config=job_config,
-        )
-        job.result()
-        print(f"Loaded {len(dataframe)} rows into {table_id}")
+        #print(f"Loaded {len(dataframe)} rows into {table_id}")
 
     upload_to_bq(get_sheets_data())
 
