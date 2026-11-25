@@ -52,7 +52,9 @@ jobs:
             -e AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@127.0.0.1:5432/airflow \
             -e AIRFLOW__API_AUTH__JWT_SECRET=ci_jwt_secret \
             -e AIRFLOW_VAR_ENV_NAME=dev \
-            -v "${GITHUB_WORKSPACE}/dags:/usr/local/airflow/dags" \
+            -e PYTHONPATH=/opt/airflow \
+            -v "${GITHUB_WORKSPACE}/dags:/opt/airflow/dags" \
+            -v "${GITHUB_WORKSPACE}/modules:/opt/airflow/modules" \
             airflow-ci:latest \
             -c '
               set -euo pipefail
